@@ -401,7 +401,7 @@ public class TranslatorTask
                     try
                     {
                         var json = JObject.Parse(data);
-                        var content = json["choices"] != null && json["choices"][0] != null && json["choices"][0]["delta"] != null ? json["choices"][0]["delta"]["content"].ToString() : null;
+                        var content = json["choices"]?[0]?["delta"]?["content"]?.ToString();
                         if (!string.IsNullOrEmpty(content))
                         {
                             lineResponse += content;
