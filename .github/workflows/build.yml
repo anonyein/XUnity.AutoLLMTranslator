@@ -14,13 +14,32 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        # 明确指定SDK版本以避免兼容性问题
+        dotnet-version: '6.0.x'
+
+    - name: Force NuGet Restore
+      shell: powershell
+      # 关键：使用强制还原确保生成正确的assets文件
+      run: |
+        dotnet restore XUnity.AutoLLMTranslator.sln --force
+        # 验证assets文件是否生成
+        if (Test-Path "**/obj/project.assets.json") {
+          echo "✅ NuGet restore completed successfully"
+        } else {
+          echo "❌ project.assets.json not found"
+          exit 1
+        }
+
     - name: Setup MSBuild
       shell: powershell
       run: |
         $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
         echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
 
-    - name: Build Project
+    - name: Build with MSBuild
       shell: powershell
       run: |
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
@@ -28,12 +47,29 @@ jobs:
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
           /p:SkipILRepack=true `
+          # 覆盖XCOPY命令中的路径问题
           /p:OutputPath="$env:GITHUB_WORKSPACE\bin\Release\net35\" `
-          /verbosity:minimal
+          # 确保MSBuild也执行还原
+          /restore `
+          /verbosity:detailed
 
-    - name: Upload DLL Artifact
+    - name: Verify DLL
+      shell: powershell
+      run: |
+        $dllPath = "$env:GITHUB_WORKSPACE\bin\Release\net35\XUnity.AutoLLMTranslator.dll"
+        if (Test-Path $dllPath) {
+          echo "✅ Build successful! DLL created at: $dllPath"
+          # 显示DLL信息
+          $fileInfo = Get-Item $dllPath
+          echo "File size: $($fileInfo.Length) bytes"
+          echo "Last modified: $($fileInfo.LastWriteTime)"
+        } else {
+          echo "❌ DLL not found at expected location!"
+          exit 1
+        }
+
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoLLMTranslator-Plugin
         path: ${{ env.GITHUB_WORKSPACE }}/bin/Release/net35/XUnity.AutoLLMTranslator.dll
-        if-no-files-found: error
