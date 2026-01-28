@@ -17,20 +17,33 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        # 明确指定SDK版本以避免兼容性问题
         dotnet-version: '6.0.x'
 
-    - name: Force NuGet Restore
+    - name: Setup NuGet (关键修复)
       shell: powershell
-      # 关键：使用强制还原确保生成正确的assets文件
       run: |
-        dotnet restore XUnity.AutoLLMTranslator.sln --force
-        # 验证assets文件是否生成
-        if (Test-Path "**/obj/project.assets.json") {
-          echo "✅ NuGet restore completed successfully"
+        # 下载 nuget.exe 用于传统项目还原
+        Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "$env:TEMP\nuget.exe"
+        echo "NUGET_PATH=$env:TEMP\nuget.exe" >> $env:GITHUB_ENV
+
+    - name: NuGet Restore (传统项目方式)
+      shell: powershell
+      run: |
+        # 方法1: 使用 nuget.exe 还原 packages.config
+        & "$env:NUGET_PATH" restore XUnity.AutoLLMTranslator.sln
+        
+        # 方法2: 使用 dotnet 还原作为备用
+        dotnet restore XUnity.AutoLLMTranslator.sln --no-cache --force
+        
+        # 验证文件确实生成（精确路径）
+        $assetsPath = "D:\a\XUnity.AutoLLMTranslator\XUnity.AutoLLMTranslator\obj\project.assets.json"
+        if (Test-Path $assetsPath) {
+          echo "✅ project.assets.json found at: $assetsPath"
         } else {
-          echo "❌ project.assets.json not found"
-          exit 1
+          # 检查其他可能位置
+          Get-ChildItem -Path . -Filter "project.assets.json" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            echo "Found assets file at: $($_.FullName)"
+          }
         }
 
     - name: Setup MSBuild
@@ -47,24 +60,28 @@ jobs:
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
           /p:SkipILRepack=true `
-          # 覆盖XCOPY命令中的路径问题
           /p:OutputPath="$env:GITHUB_WORKSPACE\bin\Release\net35\" `
-          # 确保MSBuild也执行还原
+          /p:RestorePackagesPath="$env:GITHUB_WORKSPACE\packages" `
           /restore `
-          /verbosity:detailed
+          /verbosity:normal
 
-    - name: Verify DLL
+    - name: Verify and List Output
       shell: powershell
       run: |
-        $dllPath = "$env:GITHUB_WORKSPACE\bin\Release\net35\XUnity.AutoLLMTranslator.dll"
-        if (Test-Path $dllPath) {
-          echo "✅ Build successful! DLL created at: $dllPath"
-          # 显示DLL信息
-          $fileInfo = Get-Item $dllPath
-          echo "File size: $($fileInfo.Length) bytes"
-          echo "Last modified: $($fileInfo.LastWriteTime)"
+        echo "=== Checking build output ==="
+        $searchPath = "$env:GITHUB_WORKSPACE\bin\Release"
+        Get-ChildItem -Path $searchPath -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+          echo "Found DLL: $($_.FullName)"
+          echo "  Size: $($_.Length) bytes"
+        }
+        
+        $targetDll = "$env:GITHUB_WORKSPACE\bin\Release\net35\XUnity.AutoLLMTranslator.dll"
+        if (Test-Path $targetDll) {
+          echo "✅ SUCCESS: Main DLL found at $targetDll"
         } else {
-          echo "❌ DLL not found at expected location!"
+          echo "❌ Main DLL not found at expected location"
+          echo "Current directory contents:"
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE" -Recurse | Select-Object Name, FullName | Out-String
           exit 1
         }
 
