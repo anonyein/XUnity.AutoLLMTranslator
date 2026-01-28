@@ -23,7 +23,7 @@ jobs:
     - name: Restore NuGet packages
       run: dotnet restore
 
-    - name: Build with MSBuild (Skip ILRepack)
+    - name: Build with MSBuild (Skip Problematic Steps)
       shell: powershell
       run: |
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
@@ -31,6 +31,7 @@ jobs:
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
           /p:SkipILRepack=true `
+          /p:DisablePostBuildEvent=true `
           /verbosity:minimal
 
     - name: Upload build artifacts
@@ -38,5 +39,5 @@ jobs:
       with:
         name: AutoLLMTranslator-Plugin
         path: |
-          **/bin/Release/*.dll
+          **/bin/Release/net35/XUnity.AutoLLMTranslator.dll
         if-no-files-found: error
