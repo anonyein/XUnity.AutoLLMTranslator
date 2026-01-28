@@ -14,21 +14,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET environment
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: | 
-          6.0.x
-          3.1.x
+    - name: Setup MSBuild Path
+      shell: powershell
+      run: |
+        $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
+        echo "MSBUILD_PATH=$($msbuildPath | Select-Object -First 1)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Restore NuGet packages
       run: dotnet restore
 
-    # - name: Build project (Release) - Skip ILRepack
-    #   run: dotnet build --configuration Release --no-restore /p:SkipILRepack=true
-
-    - name: Build project with MSBuild
-      run: msbuild XUnity.AutoLLMTranslator.sln /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v3.5 /p:SkipILRepack=true
+    - name: Build with MSBuild (Skip ILRepack)
+      shell: powershell
+      run: |
+        & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:TargetFrameworkVersion=v3.5 `
+          /p:SkipILRepack=true `
+          /verbosity:minimal
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
