@@ -34,8 +34,7 @@ jobs:
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
           /p:Configuration=Release `
           /p:Platform="Any CPU" `
-          /p:TargetFrameworkVersion=v3.5 `
-          /p:PostBuildEvent=
+          /p:TargetFrameworkVersion=v3.5 
           
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
