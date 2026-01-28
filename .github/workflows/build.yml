@@ -14,37 +14,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET SDK
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '6.0.x'
-
-    - name: Setup NuGet (关键修复)
-      shell: powershell
-      run: |
-        # 下载 nuget.exe 用于传统项目还原
-        Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "$env:TEMP\nuget.exe"
-        echo "NUGET_PATH=$env:TEMP\nuget.exe" >> $env:GITHUB_ENV
-
-    - name: NuGet Restore (传统项目方式)
-      shell: powershell
-      run: |
-        # 方法1: 使用 nuget.exe 还原 packages.config
-        & "$env:NUGET_PATH" restore XUnity.AutoLLMTranslator.sln
-        
-        # 方法2: 使用 dotnet 还原作为备用
-        dotnet restore XUnity.AutoLLMTranslator.sln --no-cache --force
-        
-        # 验证文件确实生成（精确路径）
-        $assetsPath = "D:\a\XUnity.AutoLLMTranslator\XUnity.AutoLLMTranslator\obj\project.assets.json"
-        if (Test-Path $assetsPath) {
-          echo "✅ project.assets.json found at: $assetsPath"
-        } else {
-          # 检查其他可能位置
-          Get-ChildItem -Path . -Filter "project.assets.json" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-            echo "Found assets file at: $($_.FullName)"
-          }
-        }
 
     - name: Setup MSBuild
       shell: powershell
@@ -52,41 +25,18 @@ jobs:
         $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
         echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
 
-    - name: Build with MSBuild
+    - name: Build Project (关键修复)
       shell: powershell
       run: |
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
           /p:Configuration=Release `
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
-          /p:SkipILRepack=true `
-          /p:OutputPath="$env:GITHUB_WORKSPACE\bin\Release\net35\" `
-          /p:RestorePackagesPath="$env:GITHUB_WORKSPACE\packages" `
-          /restore `
-          /verbosity:normal
+          /p:PostBuildEvent= `  # 设置为空字符串，禁用后构建事件
+          /verbosity:minimal
 
-    - name: Verify and List Output
-      shell: powershell
-      run: |
-        echo "=== Checking build output ==="
-        $searchPath = "$env:GITHUB_WORKSPACE\bin\Release"
-        Get-ChildItem -Path $searchPath -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-          echo "Found DLL: $($_.FullName)"
-          echo "  Size: $($_.Length) bytes"
-        }
-        
-        $targetDll = "$env:GITHUB_WORKSPACE\bin\Release\net35\XUnity.AutoLLMTranslator.dll"
-        if (Test-Path $targetDll) {
-          echo "✅ SUCCESS: Main DLL found at $targetDll"
-        } else {
-          echo "❌ Main DLL not found at expected location"
-          echo "Current directory contents:"
-          Get-ChildItem -Path "$env:GITHUB_WORKSPACE" -Recurse | Select-Object Name, FullName | Out-String
-          exit 1
-        }
-
-    - name: Upload Artifact
+    - name: Upload DLL
       uses: actions/upload-artifact@v4
       with:
         name: AutoLLMTranslator-Plugin
-        path: ${{ env.GITHUB_WORKSPACE }}/bin/Release/net35/XUnity.AutoLLMTranslator.dll
+        path: D:\a\XUnity.AutoLLMTranslator\XUnity.AutoLLMTranslator\bin\Release\net35\XUnity.AutoLLMTranslator.dll
