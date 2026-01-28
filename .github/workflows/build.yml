@@ -1,39 +1,36 @@
 name: Build XUnity.AutoLLMTranslator Plugin
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+ push:
+   branches: [ main, master ]
+ pull_request:
+   branches: [ main, master ]
 
 jobs:
-  build:
-    # Since this is a .NET Framework project, using a Windows environment is recommended for best compatibility.
-    runs-on: windows-latest
+ build:
+   runs-on: windows-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+   steps:
+   - name: Checkout code
+     uses: actions/checkout@v4
 
-    - name: Setup .NET environment
-      uses: actions/setup-dotnet@v4
-      with:
-        # Install .NET SDKs that support building .NET Framework projects.
-        dotnet-version: |
-          6.0.x
-          3.1.x
+   - name: Setup .NET environment
+     uses: actions/setup-dotnet@v4
+     with:
+       dotnet-version: |
+         6.0.x
+         3.1.x
 
-    - name: Restore NuGet packages
-      run: dotnet restore
+   - name: Restore NuGet packages
+     run: dotnet restore
 
-    - name: Build project (Release configuration)
-      run: dotnet build --configuration Release --no-restore
+   - name: Build project (Release) with MSBuild and skip ILRepack
+     run: msbuild XUnity.AutoLLMTranslator.sln /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v3.5 /p:SkipILRepack=true
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: AutoLLMTranslator-Plugin
-        # Upload all generated DLL files for easy download and use.
-        path: |
-          **/bin/Release/*.dll
-        if-no-files-found: error
+   - name: Upload build artifacts
+     uses: actions/upload-artifact@v4
+     with:
+       name: AutoLLMTranslator-Plugin
+       path: |
+         **/bin/Release/*.dll
+       if-no-files-found: error
