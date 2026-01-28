@@ -24,8 +24,11 @@ jobs:
     - name: Restore NuGet packages
       run: dotnet restore
 
-    - name: Build project (Release) - Skip ILRepack
-      run: dotnet build --configuration Release --no-restore /p:SkipILRepack=true
+    # - name: Build project (Release) - Skip ILRepack
+    #   run: dotnet build --configuration Release --no-restore /p:SkipILRepack=true
+
+    - name: Build project with MSBuild
+      run: msbuild XUnity.AutoLLMTranslator.sln /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v3.5 /p:SkipILRepack=true
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
