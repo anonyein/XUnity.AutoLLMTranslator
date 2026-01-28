@@ -1,4 +1,4 @@
-name: Build XUnity.AutoLLMTranslator Plugin
+name: Build XUnity.AutoLLMTranslator
 
 on:
   push:
@@ -14,16 +14,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup MSBuild Path
+    - name: Setup MSBuild
       shell: powershell
       run: |
-        $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
-        echo "MSBUILD_PATH=$($msbuildPath | Select-Object -First 1)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
+        echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
 
-    - name: Restore NuGet packages
-      run: dotnet restore
-
-    - name: Build with MSBuild (Skip Problematic Steps)
+    - name: Build Project
       shell: powershell
       run: |
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
@@ -31,13 +28,12 @@ jobs:
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
           /p:SkipILRepack=true `
-          /p:DisablePostBuildEvent=true `
+          /p:OutputPath="$env:GITHUB_WORKSPACE\bin\Release\net35\" `
           /verbosity:minimal
 
-    - name: Upload build artifacts
+    - name: Upload DLL Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoLLMTranslator-Plugin
-        path: |
-          **/bin/Release/net35/XUnity.AutoLLMTranslator.dll
+        path: ${{ env.GITHUB_WORKSPACE }}/bin/Release/net35/XUnity.AutoLLMTranslator.dll
         if-no-files-found: error
