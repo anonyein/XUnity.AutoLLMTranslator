@@ -19,24 +19,20 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
+    - name: Restore NuGet packages
+      run: dotnet restore XUnity.AutoLLMTranslator.sln
+
     - name: Setup MSBuild
       shell: powershell
       run: |
         $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
         echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
 
-    - name: Build Project (关键修复)
+    - name: Build Project
       shell: powershell
       run: |
         & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
           /p:Configuration=Release `
           /p:Platform="Any CPU" `
           /p:TargetFrameworkVersion=v3.5 `
-          /p:PostBuildEvent= `  # 设置为空字符串，禁用后构建事件
-          /verbosity:minimal
-
-    - name: Upload DLL
-      uses: actions/upload-artifact@v4
-      with:
-        name: AutoLLMTranslator-Plugin
-        path: D:\a\XUnity.AutoLLMTranslator\XUnity.AutoLLMTranslator\bin\Release\net35\XUnity.AutoLLMTranslator.dll
+          /p:PostBuildEvent=
