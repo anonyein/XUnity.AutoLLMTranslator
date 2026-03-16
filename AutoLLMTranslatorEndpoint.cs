@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints.Http;
 using XUnity.AutoTranslator.Plugin.Core.Web;
@@ -46,7 +44,7 @@ internal class LLMTranslatorEndpoint : HttpEndpoint
         context.Complete(new XUnityWebRequest(
             "POST", 
             "http://127.0.0.1:20000/", 
-            JsonConvert.SerializeObject(requestBody)
+            SimpleJson.SerializeTexts(requestBody)
         ));
     }
 
@@ -54,10 +52,8 @@ internal class LLMTranslatorEndpoint : HttpEndpoint
     {
         var data = context.Response.Data;
 
-        JObject jsonResponse;
-        jsonResponse = JObject.Parse(data);
-        Logger.Debug($"翻译结果: {jsonResponse}");
-        var rs = jsonResponse["texts"]?.ToObject<string[]>() ?? null;
+        Logger.Debug($"翻译结果: {data}");
+        var rs = SimpleJson.ParseTexts(data);
         if ((rs?.Length ?? 0) == 0)
         {
             context.Fail("翻译结果为空");
