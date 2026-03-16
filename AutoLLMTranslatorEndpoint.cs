@@ -37,14 +37,10 @@ internal class LLMTranslatorEndpoint : HttpEndpoint
     public override void OnCreateRequest(IHttpRequestCreationContext context)
     {
         Logger.Debug($"翻译请求: {context.UntranslatedTexts[0]}");
-        var requestBody = new
-        {
-            texts = context.UntranslatedTexts
-        };
         context.Complete(new XUnityWebRequest(
             "POST", 
             "http://127.0.0.1:20000/", 
-            SimpleJson.SerializeTexts(requestBody)
+            SimpleJson.SerializeTexts(context.UntranslatedTexts)
         ));
     }
 
