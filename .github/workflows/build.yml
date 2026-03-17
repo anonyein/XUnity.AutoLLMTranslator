@@ -40,7 +40,6 @@ jobs:
             /p:Configuration=Release `
             /p:Platform="Any CPU" `
             /p:TargetFrameworkVersion=v3.5 
-            /p:GameDir=$gameDir\
     
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
