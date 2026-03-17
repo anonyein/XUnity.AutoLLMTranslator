@@ -2,9 +2,9 @@ name: Build XUnity.AutoLLMTranslator
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, origin ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, origin ]
 
 jobs:
   build:
