@@ -1,51 +1,46 @@
-name: Build and Release
+name: Build XUnity.AutoLLMTranslator
 
 on:
   push:
-    branches: [ main, origin ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, origin ]
-
-permissions:
-  contents: write
+    branches: [ main, master ]
 
 jobs:
-  build-and-release:
+  build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.x'
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
 
-      - name: Restore NuGet packages
-        run: dotnet restore XUnity.AutoLLMTranslator.sln
-        
-      - name: Setup MSBuild
-        shell: powershell
-        run: |
-          $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
-          echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
+    - name: Restore NuGet packages
+      run: dotnet restore XUnity.AutoLLMTranslator.sln
+
+    - name: Setup MSBuild
+      shell: powershell
+      run: |
+        $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
+        echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
+
+    - name: Build Project
+      shell: powershell
+      run: |
+        & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:TargetFrameworkVersion=v3.5 
           
-      - name: Build Project
-        shell: powershell
-        run: |
-          $gameDir = Join-Path $env:RUNNER_TEMP "GameOutput"
-          New-Item -ItemType Directory -Force -Path $gameDir | Out-Null        
-          & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
-            /p:Configuration=Release `
-            /p:Platform="Any CPU" `
-            /p:TargetFrameworkVersion=v3.5 
-    
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AutoLLMTranslator-Plugin
-          path: |
-            **/bin/Release/**/XUnity.AutoLLMTranslator.dll
-            **/bin/Release/**/Newtonsoft.Json.dll
-          if-no-files-found: error
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AutoLLMTranslator-Plugin
+        path: |
+          **/bin/Release/**/XUnity.AutoLLMTranslator.dll
+          **/bin/Release/**/Newtonsoft.Json.dll
+        if-no-files-found: error
