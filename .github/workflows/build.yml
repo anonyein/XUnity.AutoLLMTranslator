@@ -24,6 +24,12 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore XUnity.AutoLLMTranslator.sln
+        
+      - name: Setup MSBuild
+        shell: powershell
+        run: |
+          $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
+          echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
 
       - name: Build
         shell: pwsh
