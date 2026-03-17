@@ -30,13 +30,17 @@ jobs:
         run: |
           $path = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
           echo "MSBUILD_PATH=$($path | Select-Object -First 1)" >> $env:GITHUB_ENV
-
-      - name: Build
-        shell: pwsh
+          
+      - name: Build Project
+        shell: powershell
         run: |
           $gameDir = Join-Path $env:RUNNER_TEMP "GameOutput"
-          New-Item -ItemType Directory -Force -Path $gameDir | Out-Null
-          dotnet build XUnity.AutoLLMTranslator.sln -c Release --no-restore "/p:GameDir=$gameDir\"
+          New-Item -ItemType Directory -Force -Path $gameDir | Out-Null        
+          & "$env:MSBUILD_PATH" XUnity.AutoLLMTranslator.sln `
+            /p:Configuration=Release `
+            /p:Platform="Any CPU" `
+            /p:TargetFrameworkVersion=v3.5 
+            /p:GameDir=$gameDir\
     
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
