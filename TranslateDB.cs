@@ -68,7 +68,16 @@ public class TranslateDB
 
     //输出当前目录
     string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-    Logger.Info($"AppDirectory: {appDirectory}");
+    if (string.IsNullOrEmpty(appDirectory))
+    {
+        // 尝试从当前程序集路径获取
+        appDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    }
+    if (string.IsNullOrEmpty(appDirectory))
+    {
+        appDirectory = Environment.CurrentDirectory;
+    }
+    Logger.Info($"AppDirectory (fixed): {appDirectory}");
     Logger.Info($"DestinationLanguage: {context.DestinationLanguage}");
     
     var dir = "";
