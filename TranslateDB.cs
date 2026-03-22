@@ -71,11 +71,6 @@ public class TranslateDB
     string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
     if (string.IsNullOrEmpty(appDirectory))
     {
-        // 尝试从当前程序集路径获取
-        appDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    }
-    if (string.IsNullOrEmpty(appDirectory))
-    {
         appDirectory = Environment.CurrentDirectory;
     }
     Logger.Info($"AppDirectory (fixed): {appDirectory}");
