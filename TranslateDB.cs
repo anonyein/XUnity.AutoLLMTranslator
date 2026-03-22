@@ -3,6 +3,7 @@ using FuzzyString;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Reflection;   // 新增
 public class TranslateDB
 {
 
