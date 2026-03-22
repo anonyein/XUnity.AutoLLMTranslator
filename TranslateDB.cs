@@ -68,10 +68,14 @@ public class TranslateDB
 
     //输出当前目录
     string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+    Logger.Info($"AppDirectory: {appDirectory}");
+    Logger.Info($"DestinationLanguage: {context.DestinationLanguage}");
+    
     var dir = "";
     foreach (var path in dataPaths)
     {
-      var p = appDirectory + string.Format(path,context.DestinationLanguage);
+      var p = appDirectory + string.Format(path, context.DestinationLanguage);
+      Logger.Info($"Checking: {p} exists? {Directory.Exists(p)}");
       if (Directory.Exists(p))
       {
         dir = p;
